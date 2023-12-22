@@ -2,14 +2,12 @@ const express = require('express')
 const app = express();
 const port = 3000;
 
-//import file book yang berisikan fungsi2 yang diexport
 const events = require('./model/events')
 const customer = require('./model/customer')
 
-// membuat express dapat menerima request body berupa JSON
 app.use(express.json())
 
-// curl -X GET http://localhost:3000/
+// http://localhost:3000/
 app.get("/", (req, res) => {
     res.send("Hello World!");
 });
@@ -23,11 +21,9 @@ app.get("/tickets/:customerName", async(req, res) => {
 
     const result = await customer.listOrderedTickets(customerName);
 
-    // gabisa??
     if (result === null) {
-        // HTTP Status bisa baca di https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         res.status(404)
-        res.json('book not found')
+        res.json('Customer not found')
         return
     }
 
@@ -55,8 +51,7 @@ app.get("/customer/invoice/:customerName", async(req, res) => {
 })
 
 // SearchEvent: http://localhost:3000/events/search
-// Bakal show all events
-// harusnya gimana 
+// SALAH
 app.get("/events/search", async (req, res) => {
     const { searchField, search } = req.query
 
@@ -66,7 +61,7 @@ app.get("/events/search", async (req, res) => {
 })
 
 // SearchTicket: http://localhost:3000/tickets/search
-// ini gabisa
+// SALAH
 app.get("/tickets/search", async (req, res) => {
     const { searchField, search } = req.query
 
@@ -75,29 +70,68 @@ app.get("/tickets/search", async (req, res) => {
     res.json(tickets);
 })
 
-// Order tickets: http://localhost:3000/tickets/orders
-app.post("/tickets/orders", async (req, res) => {
-    try {
-        const orders = req.body
+// Function add to cart: 
+// Jadi ini kayak order ticket, tapi kondisinya masih di cart dan belum dibayar
+/* Contoh query di Postman:
+[{"eventId": 2,
+"customerName": "Agnes",
+    "quantity": 1
+}]    */
 
-        for (let i = 0; i < orders.length; i++) {
-            const customerName = orders[i].customerName
+app.post("/customer/cart", async (req,res) => {
+    try {
+        const cart = req.body
+
+        for (let i = 0; i < cart.length; i++) {
+            const customerName = cart[i].customerName
             if (!customerName || customerName === "") {
                 res.status(422).send("Customer name must be filled!")
                 return
             }
 
-            // kalo quantity int gmn ya? perlu di parseInt kah
-            const quantity = orders[i].quantity
+            const quantity = cart[i].quantity
             if (quantity === 0) {
                 res.status(422).send("Quantity must be filled!")
                 return
             }
 
-            // kalo order: inCart auto false dan isPaid auto true, how?
+            const eventId = cart[i].eventId
+            if (eventId === 0) {
+                res.status(422).send("Event ID must be filled!")
+                return
+            }
+
+            cart[i].inCart = true
+            cart[i].isPaid = false
+            cart[i].ticketId = Math.floor(Math.random() * 1000)
         }
 
-        const _orders = await customer.orderTicket(orders)
+        const _carts = await customer.orderTicket(cart)
+        res.status(201)
+        res.json(_carts);
+        
+    } catch (error) {
+        res.status(422)
+        res.json(`Ticket already exists`)    
+    }
+})
+
+// Order tickets: http://localhost:3000/tickets/orders
+// Ini checkout ticket yang udah ada di cart
+app.post("/tickets/orders", async (req, res) => {
+    try {
+        const ticketIds = req.body
+
+        const theTicket = await customer.searchTicketbyIds(ticketIds)
+
+        if(theTicket.length === 0) {
+            res.status(404)
+            res.json('Ticket not found')
+            return
+        }
+
+        const _orders = await customer.paidTicket(ticketIds)
+        
         res.status(201)
         res.json(_orders);
     } catch (error) {
@@ -105,9 +139,6 @@ app.post("/tickets/orders", async (req, res) => {
         res.json(`Ticket already exists`)
     }
 })
-
-
-
 
 // Admin routes
 
@@ -129,7 +160,7 @@ app.post("/events", async (req, res) => {
         const newEvents = req.body
 
         for (let i = 0; i < newEvents.length; i++) {
-            const eventName = newEvents[i].eventName
+            const eventName = newEvents[i].title
             if (!eventName || eventName === "") {
                 res.status(422).send("Event name must be filled!")
                 return
@@ -141,15 +172,19 @@ app.post("/events", async (req, res) => {
                 return
             }
 
-            //kalo date gimana ya
-            const date = newEvents[i].date
-            if (!venue || venue === "") {
-                res.status(422).send("Venue name must be filled!")
+            const date = Date.parse(newEvents[i].date)
+            if (!date || date === "") {
+                res.status(422).send("Date must be filled!")
                 return
             }
 
+            const quantity = newEvents[i].quantity
+            if (quantity === 0) {
+                res.status(422).send("Quantity must be filled!")
+                return
+            }
         }
-
+        
         const _events = await events.makeEvent(newEvents)
         res.status(201)
         res.json(_events);
@@ -177,7 +212,6 @@ app.put("/events/:id", async (req, res) => {
             return
         }
 
-        //how
         if (date === "") {
             res.status(422)
             res.json("Date can't be empty!")
@@ -218,19 +252,6 @@ app.put("/events/:id", async (req, res) => {
         res.json('Update failed')
     }
 })
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
