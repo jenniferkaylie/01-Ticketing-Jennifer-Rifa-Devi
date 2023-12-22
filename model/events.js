@@ -59,7 +59,7 @@ async function updateEvent(event) {
         const db = await mongo.connect();
         console.log("Update data...");
 
-        await db.collection("events").findOneAndUpdate(
+        const coba = await db.collection("events").updateOne(
             { id: event.id },
             {
                 $set: {
@@ -69,6 +69,8 @@ async function updateEvent(event) {
                 }
             }
         )
+
+        console.log(coba);
         return "data updated"
     } catch (error) {
         console.log(error);
@@ -117,4 +119,4 @@ async function deleteData(id) {
 
 
 
-module.exports = { listTickets, makeEvent, listEvents, updateEvent }
+module.exports = { listTickets, makeEvent, listEvents, updateEvent, fetchOneData }

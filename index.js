@@ -16,56 +16,61 @@ app.get("/", (req, res) => {
 // Customer routes 
 
 // List ordered tickets: http://localhost:3000/tickets/Agnes
+// Return ticket yang sudah diorder (sudah dibayar juga) oleh customerName, kalo belom bayar -> error
 app.get("/tickets/:customerName", async(req, res) => {
     const { customerName } = req.params;
 
     const result = await customer.listOrderedTickets(customerName);
 
-    if (result === null) {
-        res.status(404)
-        res.json('Customer not found')
-        return
-    }
-
     res.json(result);
 })
 
 // List events : http://localhost:3000/events
+// List semua events yang ada
 app.get("/events", async (req, res) => {
     const events = await customer.listEvents();
     res.json(events);
 })
 
 // List cart: http://localhost:3000/customer/cart/Agnes
+// List isi cart customer berdasarkan nama customer, kalo udah bayar berarti cartnya empty
 app.get("/customer/cart/:customerName", async(req, res) => {
     const { customerName } = req.params;
     const result = await customer.listCart(customerName);
     res.json(result);
 })
 
+
 // Get Invoice: http://localhost:3000/customer/invoice/Agnes
+// Menampilkan invoice order sesuai dengan nama 
 app.get("/customer/invoice/:customerName", async(req, res) => {
     const { customerName } = req.params;
     const result = await customer.getInvoice(customerName);
     res.json(result);
 })
 
-// SearchEvent: http://localhost:3000/events/search
-// SALAH
-app.get("/events/search", async (req, res) => {
+// SearchEvent: http://localhost:3000/customer/searchevent
+// Search event berdasarkan nama event dan venue
+app.get("/customer/searchevent", async (req, res) => {
     const { searchField, search } = req.query
+    console.log('Search Field:', searchField);
+    console.log('Search Query:', search);
 
     const events = await customer.searchEvent(searchField, search);
+
 
     res.json(events);
 })
 
-// SearchTicket: http://localhost:3000/tickets/search
-// SALAH
-app.get("/tickets/search", async (req, res) => {
+
+
+// SearchTicket: http://localhost:3000/customer/searchticket
+// Search ticket berdasarkan nama customer
+app.get("/customer/searchticket", async (req, res) => {
     const { searchField, search } = req.query
 
     const tickets = await customer.searchTicket(searchField, search);
+
 
     res.json(tickets);
 })
@@ -77,7 +82,6 @@ app.get("/tickets/search", async (req, res) => {
 "customerName": "Agnes",
     "quantity": 1
 }]    */
-
 app.post("/customer/cart", async (req,res) => {
     try {
         const cart = req.body
@@ -118,6 +122,7 @@ app.post("/customer/cart", async (req,res) => {
 
 // Order tickets: http://localhost:3000/tickets/orders
 // Ini checkout ticket yang udah ada di cart
+// Cuma input ticketId
 app.post("/tickets/orders", async (req, res) => {
     try {
         const ticketIds = req.body
@@ -143,6 +148,7 @@ app.post("/tickets/orders", async (req, res) => {
 // Admin routes
 
 // List Tickets: http://localhost:3000/events/2
+// List ticket yang dibeli atau direserve untuk sebuah event
 app.get("/events/:eventId", async(req, res) => {
     const eventId = parseInt(req.params.eventId)
 
@@ -155,6 +161,7 @@ app.get("/events/:eventId", async(req, res) => {
 // List Events: http://localhost:3000/events --> udah di atas
 
 // Make Events: http://localhost:3000/events
+// Membuat event baru, params: eventname, venue, date
 app.post("/events", async (req, res) => {
     try {
         const newEvents = req.body
@@ -172,7 +179,7 @@ app.post("/events", async (req, res) => {
                 return
             }
 
-            const date = Date.parse(newEvents[i].date)
+            const date = newEvents[i].date
             if (!date || date === "") {
                 res.status(422).send("Date must be filled!")
                 return
@@ -183,6 +190,8 @@ app.post("/events", async (req, res) => {
                 res.status(422).send("Quantity must be filled!")
                 return
             }
+
+            newEvents[i].eventId = Math.floor(Math.random() * 1000)
         }
         
         const _events = await events.makeEvent(newEvents)
@@ -244,16 +253,15 @@ app.put("/events/:id", async (req, res) => {
         }
 
         await events.updateEvent(theEvent)
+        console.log(theEvent)
 
-        res.json(theEvent);
+        res.json('updated');
     } catch (error) {
         res.status(422)
         console.log('error', error)
         res.json('Update failed')
     }
 })
-
-
 
 
 

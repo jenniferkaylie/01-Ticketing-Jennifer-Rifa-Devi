@@ -12,7 +12,14 @@ async function listOrderedTickets(customerName) {
         throw new Error(`Customer with name '${customerName}' not found.`);
       }
 
-      return await db.collection("tickets").find({ customerName }).toArray();
+      const result = await db.collection("tickets").find({ customerName, isPaid: true, inCart: false }).toArray();
+ 
+      if (result.length === 0 || !result) {
+        throw new Error(`Customer's ordered list is empty`)
+    }
+    
+    return result
+
     } catch (error) {
       console.error(error);
       throw error;
@@ -129,7 +136,6 @@ async function searchEvent( searchField, search ) {
         if (searchField && search) {
             return await db
             .collection("events")
-            //penggunaan [] pada key di find, untuk mengekstrasi value dari variabel untuk dijadikan key
             .find( { [searchField]:  new RegExp(search, 'i')}, { projection: {} })
             .toArray();
         } else {
