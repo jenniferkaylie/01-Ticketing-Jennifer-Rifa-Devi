@@ -14,23 +14,32 @@ async function seedData() {
                     id: 1,
                     title: "Coldplay: Music of the Spheres",
                     venue: "Gelora Bung Karno Jakarta",
-                    date: new Date("2023-11-05")
+                    date: new Date("2023-11-05"),
+                    quantity: 2
                 },
                 {
                     id: 2,
                     title: "Taylor Swift: The Eras Tour",
                     venue: "National Stadium Singapore",
-                    date: new Date("2024-03-05")                },
+                    date: new Date("2024-03-05"),
+                    quantity: 2
+
+                },
                 {
                     id: 3,
                     title: "Java Jazz Festival",
                     venue: "Jakarta International Expo",
-                    date: new Date("2024-05-24")                  },
+                    date: new Date("2024-05-24"),
+                    quantity: 2
+        
+                 },
                 {
                     id: 4,
                     title: "We The Fest 2023",
                     venue: "Gelora Bung Karno Jakarta",
-                    date: new Date("2023-07-21")                  },
+                    date: new Date("2023-07-21"),
+                    quantity: 2
+                },
             ]);
         await db
             .collection("tickets")

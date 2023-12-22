@@ -8,6 +8,7 @@ async function listOrderedTickets(customerName) {
       const customerExists = await db.collection("tickets").findOne({ customerName });
 
       if (!customerExists) {
+
         throw new Error(`Customer with name '${customerName}' not found.`);
       }
 
@@ -75,6 +76,30 @@ async function orderTicket(newTicket) {
         await mongo.disconnect()
         console.log('finished.')
     }
+}
+
+async function paidTicket(ticketId) {
+    try {
+        const db = await mongo.connect();
+        console.log("Update data...");
+
+        await db.collection("tickets").updateMany(
+            { ticketId:{ $in: ticketId } },
+            {
+                $set: {
+                    inCart: false,
+                    isPaid: true
+                }
+            }
+        )
+        return "data updated"
+    } catch (error) {
+        console.log(error);
+        throw error
+    } finally {
+        await mongo.disconnect()
+        console.log('finished.')
+      }
 }
 
 async function getInvoice(customerName) {
@@ -147,5 +172,19 @@ async function searchTicket( searchField, search ) {
       }
 }
 
+async function searchTicketbyIds(ids) {
+    try {
+        const db = await mongo.connect();
+        
+        return await db.collection("tickets").find( { ticketId:{ $in: ids } }).toArray();
+    } catch (error) {
+        console.log(error);
+        throw error
+    } finally {
+        await mongo.disconnect()
+        console.log('finished.')
+      }
+}
 
-module.exports = { listOrderedTickets, listCart, listEvents, orderTicket, getInvoice, searchEvent, searchTicket }
+
+module.exports = { listOrderedTickets, listCart, listEvents, orderTicket, getInvoice, searchEvent, searchTicket, searchTicketbyIds, paidTicket }
